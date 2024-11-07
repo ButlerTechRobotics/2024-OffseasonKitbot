@@ -24,13 +24,16 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveIO;
 import frc.robot.subsystems.drive.DriveIOSim;
-import frc.robot.subsystems.drive.DriveIOSparkMax;
+import frc.robot.subsystems.drive.DriveIOTalonSRX;
+import frc.robot.subsystems.feeder.Feeder;
+import frc.robot.subsystems.feeder.FeederIO;
+import frc.robot.subsystems.feeder.FeederIOSim;
+import frc.robot.subsystems.feeder.FeederIOTalonSRX;
 import frc.robot.subsystems.flywheel.Flywheel;
 import frc.robot.subsystems.flywheel.FlywheelIO;
 import frc.robot.subsystems.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.flywheel.FlywheelIOSparkMax;
+import frc.robot.subsystems.flywheel.FlywheelIOTalonSRX;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -42,45 +45,45 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Flywheel flywheel;
+  private final Feeder feeder;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
-  private final LoggedDashboardNumber flywheelSpeedInput =
-      new LoggedDashboardNumber("Flywheel Speed", 1500.0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
-        drive = new Drive(new DriveIOSparkMax());
-        flywheel = new Flywheel(new FlywheelIOSparkMax());
+        drive = new Drive(new DriveIOTalonSRX());
+        flywheel = new Flywheel(new FlywheelIOTalonSRX());
+        feeder = new Feeder(new FeederIOTalonSRX());
+
         // drive = new Drive(new DriveIOTalonFX());
-        // flywheel = new Flywheel(new FlywheelIOTalonFX());
         break;
 
       case SIM:
         // Sim robot, instantiate physics sim IO implementations
         drive = new Drive(new DriveIOSim());
         flywheel = new Flywheel(new FlywheelIOSim());
+        feeder = new Feeder(new FeederIOSim());
         break;
 
       default:
         // Replayed robot, disable IO implementations
         drive = new Drive(new DriveIO() {});
         flywheel = new Flywheel(new FlywheelIO() {});
+        feeder = new Feeder(new FeederIO() {});
         break;
     }
 
     // Set up auto routines
     NamedCommands.registerCommand(
         "Run Flywheel",
-        Commands.startEnd(
-                () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel)
-            .withTimeout(5.0));
+        Commands.startEnd(() -> flywheel.runVolts(12), flywheel::stop, flywheel).withTimeout(5.0));
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
     // Set up SysId routines
@@ -119,11 +122,17 @@ public class RobotContainer {
     drive.setDefaultCommand(
         Commands.run(
             () -> drive.driveArcade(-controller.getLeftY(), controller.getLeftX()), drive));
+      while 
     controller
-        .a()
-        .whileTrue(
-            Commands.startEnd(
-                () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
+        .rightTrigger()
+        .onTrue(
+            Commands.sequence(
+                Commands.runOnce(() -> flywheel.runVolts(12)),
+                Commands.waitSeconds(2),
+                Commands.runOnce(() -> feeder.runVolts(12)),
+                Commands.waitSeconds(2),
+                Commands.runOnce(() -> flywheel.runVolts(0)),
+                Commands.runOnce(() -> feeder.runVolts(0))));
   }
 
   /**

@@ -42,7 +42,6 @@ public class Drive extends SubsystemBase {
   public static final double WHEEL_RADIUS = Units.inchesToMeters(3.0);
   public static final double TRACK_WIDTH = Units.inchesToMeters(26.0);
 
-  // TODO: NON-SIM FEEDFORWARD GAINS MUST BE TUNED
   // Consider using SysId routines defined in RobotContainer
   private static final double KS = Constants.currentMode == Mode.SIM ? 0.0 : 0.0;
   private static final double KV = Constants.currentMode == Mode.SIM ? 0.227 : 0.0;

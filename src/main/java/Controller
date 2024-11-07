@@ -1,0 +1,28 @@
+import edu.wpi.first.wpilibj.Joystick;
+
+public class Robot extends TimedRobot {
+    private Joystick xboxController;
+    private static final double DEADZONE = 0.5; // Adjust this value as needed
+
+    @Override
+    public void robotInit() {
+        xboxController = new Joystick(0); // Assuming the controller is on USB port 0
+    }
+
+    @Override
+    public void teleopPeriodic() {
+        double leftX = applyDeadzone(xboxController.getRawAxis(0)); // X-axis
+        double leftY = applyDeadzone(xboxController.getRawAxis(1)); // Y-axis
+
+        // Use leftX and leftY for your robot's control logic
+        // For example, you might drive your robot using these values
+    }
+
+    private double applyDeadzone(double value) {
+        if (Math.abs(value) < DEADZONE) {
+            return 0; // Deadzone: ignore small movements
+        }
+        // Scale the value to account for the deadzone
+        return (value - Math.signum(value) * DEADZONE) / (1 - DEADZONE);
+    }
+}
