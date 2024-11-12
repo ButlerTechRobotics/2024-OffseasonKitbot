@@ -11,34 +11,32 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.luncher;
+package frc.robot.subsystems.feeder;
 
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 
-/**
- */
+public class FeederIOTalonSRX implements FeederIO {
+  private final TalonSRX feedMotor = new TalonSRX(5);
 
- public class FeederIOTalonSRX implements FeederIO {
-    private final TalonSRX feedMotor = new TalonSRX(11);
-
-    public FeederIOTalonSRX() {
-        var config = new TalonSRXConfiguration();
-        config.peakCurrentLimit = 80;
-        config.peakCurrentDuration = 250;
-        config.continuousCurrentLimit = 60;
-        config.voltageCompSaturation = 12.0;
-        feederMotor.configAllSettings(config);
-      }  
-
-      @Override
-  public void updateInputs(FeederIOInputs inputs) {
-    inputs.feederAppliedVolts = feederMotor.getMotorOutputVoltage();
-    inputs.feederCurrentAmps = new double[] {feederMotor.getSupplyCurrent()};
+  public FeederIOTalonSRX() {
+    var config = new TalonSRXConfiguration();
+    config.peakCurrentLimit = 80;
+    config.peakCurrentDuration = 250;
+    config.continuousCurrentLimit = 60;
+    config.voltageCompSaturation = 12.0;
+    feedMotor.configAllSettings(config);
+  }
 
   @Override
-  public void setFeederVoltage(double volts) {
-    feederMotor.set(TalonSRXControlMode.PercentOutput, volts * 12.0)};
+  public void updateInputs(FeederIOInputs inputs) {
+    inputs.appliedVolts = feedMotor.getMotorOutputVoltage();
+    inputs.currentAmps = new double[] {feedMotor.getSupplyCurrent()};
+  }
+
+  @Override
+  public void setVoltage(double volts) {
+    feedMotor.set(TalonSRXControlMode.PercentOutput, volts * 12.0);
   }
 }

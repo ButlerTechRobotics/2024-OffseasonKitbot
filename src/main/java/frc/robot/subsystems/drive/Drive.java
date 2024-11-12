@@ -42,7 +42,6 @@ public class Drive extends SubsystemBase {
   public static final double WHEEL_RADIUS = Units.inchesToMeters(3.0);
   public static final double TRACK_WIDTH = Units.inchesToMeters(26.0);
 
-  // TODO: NON-SIM FEEDFORWARD GAINS MUST BE TUNED
   // Consider using SysId routines defined in RobotContainer
   private static final double KS = Constants.currentMode == Mode.SIM ? 0.0 : 0.0;
   private static final double KV = Constants.currentMode == Mode.SIM ? 0.227 : 0.0;
@@ -127,12 +126,15 @@ public class Drive extends SubsystemBase {
         feedforward.calculate(rightRadPerSec));
   }
 
-  /** Run open loop based on stick positions. */
+  /** Run open loop based on stick positions with deadzone adjustment of 0.3 in one line. */
   public void driveArcade(double xSpeed, double zRotation) {
-    var speeds = DifferentialDrive.arcadeDriveIK(xSpeed, zRotation, true);
-    io.setVoltage(speeds.left * 12.0, speeds.right * 12.0);
+    xSpeed = Math.abs(xSpeed) < 0.2 ? 0.0 : (xSpeed - Math.signum(xSpeed) * 0.3) / (1.0 - 0.3);
+    zRotation =
+        Math.abs(zRotation) < 0.2 ? 0.0 : (zRotation - Math.signum(zRotation) * 0.3) / (1.0 - 0.3);
+    io.setVoltage(
+        DifferentialDrive.arcadeDriveIK(xSpeed, zRotation, true).left,
+        DifferentialDrive.arcadeDriveIK(xSpeed, zRotation, true).right);
   }
-
   /** Stops the drive. */
   public void stop() {
     io.setVoltage(0.0, 0.0);

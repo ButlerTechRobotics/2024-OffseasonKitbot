@@ -30,7 +30,7 @@ public class Feeder extends SubsystemBase {
   private final SimpleMotorFeedforward ffModel;
   private final SysIdRoutine sysId;
 
-  /** Creates a new Feeder. */
+  /** Creates a new feeder. */
   public Feeder(FeederIO io) {
     this.io = io;
 
@@ -52,19 +52,20 @@ public class Feeder extends SubsystemBase {
     }
 
     // Configure SysId
-    sysId = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null,
-            null,
-            null,
-            (state) -> Logger.recordOutput("feeder/SysIdState", state.toString())),
-        new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
+    sysId =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> Logger.recordOutput("feeder/SysIdState", state.toString())),
+            new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
   }
 
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Feeder", inputs);
+    Logger.processInputs("feeder", inputs);
   }
 
   /** Run open loop at the specified voltage. */

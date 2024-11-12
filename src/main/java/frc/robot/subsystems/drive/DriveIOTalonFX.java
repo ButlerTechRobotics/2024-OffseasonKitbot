@@ -27,8 +27,8 @@ import edu.wpi.first.math.util.Units;
 
 public class DriveIOTalonFX implements DriveIO {
   private static final double GEAR_RATIO = 10.0;
-  private static final double KP = 1.0; // TODO: MUST BE TUNED, consider using Phoenix Tuner X
-  private static final double KD = 0.0; // TODO: MUST BE TUNED, consider using Phoenix Tuner X
+  private static final double KP = 1.0;
+  private static final double KD = 0.0;
 
   private final TalonFX leftLeader = new TalonFX(0);
   private final TalonFX leftFollower = new TalonFX(1);

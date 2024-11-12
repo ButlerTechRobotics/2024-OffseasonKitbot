@@ -13,8 +13,6 @@
 
 package frc.robot;
 
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -26,24 +24,21 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveIO;
 import frc.robot.subsystems.drive.DriveIOSim;
-import frc.robot.subsystems.drive.DriveIOSparkMax;
+import frc.robot.subsystems.drive.DriveIOTalonSRX;
 import frc.robot.subsystems.feeder.Feeder;
 import frc.robot.subsystems.feeder.FeederIO;
 import frc.robot.subsystems.feeder.FeederIOSim;
-import frc.robot.subsystems.feeder.FeederIOTalonFX;
+import frc.robot.subsystems.feeder.FeederIOTalonSRX;
 import frc.robot.subsystems.flywheel.Flywheel;
 import frc.robot.subsystems.flywheel.FlywheelIO;
 import frc.robot.subsystems.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.flywheel.FlywheelIOTalonFX;
-import
+import frc.robot.subsystems.flywheel.FlywheelIOTalonSRX;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
- * This class is where the bulk of the robot should be declared. Since
- * Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in
- * the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of
- * the robot (including
+ * This class is where the bulk of the robot should be declared. Since Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
+ * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
@@ -58,19 +53,16 @@ public class RobotContainer {
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
-  /**
-   * The container for the robot. Contains subsystems, OI devices, and commands.
-   */
+  /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
-        drive = new Drive(new DriveIOSparkMax());
-        flywheel = new Flywheel(new FlywheelIOTalo());
-        feeder = new Feeder(new FEED());
+        drive = new Drive(new DriveIOTalonSRX());
+        flywheel = new Flywheel(new FlywheelIOTalonSRX());
+        feeder = new Feeder(new FeederIOTalonSRX());
 
         // drive = new Drive(new DriveIOTalonFX());
-
         break;
 
       case SIM:
@@ -78,28 +70,20 @@ public class RobotContainer {
         drive = new Drive(new DriveIOSim());
         flywheel = new Flywheel(new FlywheelIOSim());
         feeder = new Feeder(new FeederIOSim());
-        break; 
+        break;
 
       default:
         // Replayed robot, disable IO implementations
-        drive = new Drive(new DriveIO() {
-
-        });
-        flywheel = new Flywheel(new FlywheelIO() {
-
-        });
-        feeder = new Feeder(new FeederIO() {
-
-        });
+        drive = new Drive(new DriveIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {});
+        feeder = new Feeder(new FeederIO() {});
         break;
     }
 
     // Set up auto routines
     NamedCommands.registerCommand(
         "Run Flywheel",
-        Commands.startEnd(
-            () -> flywheel.runVolts(12), flywheel::stop, flywheel)
-            .withTimeout(5.0));
+        Commands.startEnd(() -> flywheel.runVolts(12), flywheel::stop, flywheel).withTimeout(5.0));
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
     // Set up SysId routines
@@ -129,29 +113,36 @@ public class RobotContainer {
   }
 
   /**
-   * Use this method to define your button->command mappings. Buttons can be
-   * created by
+   * Use this method to define your button->command mappings. Buttons can be created by
    * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing
-   * it to a {@link
+   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
     drive.setDefaultCommand(
         Commands.run(
-            () -> drive.driveArcade(-controller.getLeftY(), controller.getLeftX()), drive));
+            () -> drive.driveArcade(-controller.getLeftY(), -controller.getRightX()), drive));
     controller
         .rightTrigger()
+        .onTrue(
+            Commands.sequence(
+                Commands.runOnce(() -> flywheel.runVolts(12)),
+                Commands.waitSeconds(1),
+                Commands.runOnce(() -> feeder.runVolts(12)),
+                Commands.waitSeconds(1),
+                Commands.runOnce(() -> flywheel.runVolts(0)),
+                Commands.runOnce(() -> feeder.runVolts(0))));
+
+    controller
+        .leftTrigger()
         .whileTrue(
-          Commands.sequence(    
-              Commands.run(() -> flywheel.runVolts(12)),
-              Commands.waitSeconds(2),
-              Commands.run(() -> feeder.runVolts(-12)),
-              Commands.waitSeconds(2),
-              Commands.run(() -> flywheel.runVolts(0)),
-              Commands.run(() -> feeder.runVolts(0))
-         )
-        );
+            Commands.parallel(
+                Commands.runOnce(() -> flywheel.runVolts(-3)),
+                Commands.runOnce(() -> feeder.runVolts(-3))))
+        .onFalse(
+            Commands.parallel(
+                Commands.runOnce(() -> flywheel.runVolts(0)),
+                Commands.runOnce(() -> feeder.runVolts(0))));
   }
 
   /**

@@ -17,12 +17,10 @@ import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 
-/**
- */
 public class FlywheelIOTalonSRX implements FlywheelIO {
-  private final TalonSRX flywheelMotor = new TalonSRX(10);
+  private final TalonSRX flywheelMotor = new TalonSRX(6);
 
-public FlywheelIOTalonSRX() {
+  public FlywheelIOTalonSRX() {
     var config = new TalonSRXConfiguration();
     config.peakCurrentLimit = 80;
     config.peakCurrentDuration = 250;
@@ -33,11 +31,12 @@ public FlywheelIOTalonSRX() {
 
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
-    inputs.flywheelAppliedVolts = flywheelMotor.getMotorOutputVoltage();
-    inputs.flywheelCurrentAmps = new double[] {flywheelMotor.getSupplyCurrent()};
+    inputs.appliedVolts = flywheelMotor.getMotorOutputVoltage();
+    inputs.currentAmps = new double[] {flywheelMotor.getSupplyCurrent()};
+  }
 
-     @Override
-  public void setLaunchVoltage(double volts) {
-    flywheelMotor.set(TalonSRXControlMode.PercentOutput, volts * 12.0)};
+  @Override
+  public void setVoltage(double volts) {
+    flywheelMotor.set(TalonSRXControlMode.PercentOutput, volts * 12.0);
   }
 }
