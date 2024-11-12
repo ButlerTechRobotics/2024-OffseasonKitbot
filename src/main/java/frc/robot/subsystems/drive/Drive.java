@@ -126,12 +126,15 @@ public class Drive extends SubsystemBase {
         feedforward.calculate(rightRadPerSec));
   }
 
-  /** Run open loop based on stick positions. */
+  /** Run open loop based on stick positions with deadzone adjustment of 0.3 in one line. */
   public void driveArcade(double xSpeed, double zRotation) {
-    var speeds = DifferentialDrive.arcadeDriveIK(xSpeed, zRotation, true);
-    io.setVoltage(speeds.left * 12.0, speeds.right * 12.0);
+    xSpeed = Math.abs(xSpeed) < 0.2 ? 0.0 : (xSpeed - Math.signum(xSpeed) * 0.3) / (1.0 - 0.3);
+    zRotation =
+        Math.abs(zRotation) < 0.2 ? 0.0 : (zRotation - Math.signum(zRotation) * 0.3) / (1.0 - 0.3);
+    io.setVoltage(
+        DifferentialDrive.arcadeDriveIK(xSpeed, zRotation, true).left,
+        DifferentialDrive.arcadeDriveIK(xSpeed, zRotation, true).right);
   }
-
   /** Stops the drive. */
   public void stop() {
     io.setVoltage(0.0, 0.0);

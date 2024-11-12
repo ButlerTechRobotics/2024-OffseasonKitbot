@@ -121,16 +121,26 @@ public class RobotContainer {
   private void configureButtonBindings() {
     drive.setDefaultCommand(
         Commands.run(
-            () -> drive.driveArcade(-controller.getLeftY(), controller.getLeftX()), drive));
-      while 
+            () -> drive.driveArcade(-controller.getLeftY(), -controller.getRightX()), drive));
     controller
         .rightTrigger()
         .onTrue(
             Commands.sequence(
                 Commands.runOnce(() -> flywheel.runVolts(12)),
-                Commands.waitSeconds(2),
+                Commands.waitSeconds(1),
                 Commands.runOnce(() -> feeder.runVolts(12)),
-                Commands.waitSeconds(2),
+                Commands.waitSeconds(1),
+                Commands.runOnce(() -> flywheel.runVolts(0)),
+                Commands.runOnce(() -> feeder.runVolts(0))));
+
+    controller
+        .leftTrigger()
+        .whileTrue(
+            Commands.parallel(
+                Commands.runOnce(() -> flywheel.runVolts(-3)),
+                Commands.runOnce(() -> feeder.runVolts(-3))))
+        .onFalse(
+            Commands.parallel(
                 Commands.runOnce(() -> flywheel.runVolts(0)),
                 Commands.runOnce(() -> feeder.runVolts(0))));
   }
